@@ -1,15 +1,24 @@
 import { useEffect, useRef, useState } from "react";
-
 import { Link } from "react-router";
 import { useSidebar } from "../../context/SidebarContext";
 import { ThemeToggleButton } from "../common/ThemeToggleButton";
+import { useTheme } from "../../context/ThemeContext";
 import NotificationDropdown from "./NotificationDropdown";
 import UserDropdown from "./UserDropdown";
 
 const AppHeader = () => {
   const [isApplicationMenuOpen, setApplicationMenuOpen] = useState(false);
+  const [isColorPickerOpen, setColorPickerOpen] = useState(false);
+  const colorPickerRef = useRef(null);
+  const { accentColor, setAccentColor, ACCENT_COLORS } = useTheme();
 
-  const { isMobileOpen, toggleSidebar, toggleMobileSidebar } = useSidebar();
+  const {
+    isExpanded,
+    isHovered,
+    isMobileOpen,
+    toggleSidebar,
+    toggleMobileSidebar,
+  } = useSidebar();
 
   const handleToggle = () => {
     if (window.innerWidth >= 991) {
@@ -24,6 +33,20 @@ const AppHeader = () => {
   };
 
   const inputRef = useRef(null);
+
+  // Close color picker on outside click
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (
+        colorPickerRef.current &&
+        !colorPickerRef.current.contains(e.target)
+      ) {
+        setColorPickerOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   useEffect(() => {
     const handleKeyDown = (event) => {
@@ -41,9 +64,17 @@ const AppHeader = () => {
   }, []);
 
   return (
-    <header className="sticky top-0 flex w-full bg-white border-gray-200 z-99999 dark:border-gray-800 dark:bg-gray-900 lg:border-b">
+    <header
+      className={`fixed top-0 right-0 z-[999] flex bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-800 transition-all duration-300 ease-in-out ${
+        isMobileOpen
+          ? "left-0"
+          : isExpanded || isHovered
+            ? "lg:left-[290px]"
+            : "lg:left-[90px]"
+      } left-0`}
+    >
       <div className="flex flex-col items-center justify-between flex-grow lg:flex-row lg:px-6">
-        <div className="flex items-center justify-between w-full gap-2 px-3 py-3 border-b border-gray-200 dark:border-gray-800 sm:gap-4 lg:justify-normal lg:border-b-0 lg:px-0 lg:py-4">
+        <div className="flex items-center justify-between w-full gap-2 px-3 py-3 sm:gap-4 lg:justify-normal lg:px-0 lg:py-4">
           <button
             className="items-center justify-center w-10 h-10 text-gray-500 border-gray-200 rounded-lg z-99999 dark:border-gray-800 lg:flex dark:text-gray-400 lg:h-11 lg:w-11 lg:border"
             onClick={handleToggle}
@@ -82,17 +113,12 @@ const AppHeader = () => {
             )}
           </button>
 
-          <Link to="/" className="lg:hidden">
-            <img
-              className="dark:hidden"
-              src="/images/logo/logo.svg"
-              alt="Logo"
-            />
-            <img
-              className="hidden dark:block"
-              src="/images/logo/logo-dark.svg"
-              alt="Logo"
-            />
+          <Link
+            to="/"
+            className="lg:hidden flex items-center gap-2 text-slate-800 dark:text-white font-bold tracking-tight"
+          >
+            ERP{" "}
+            <span className="text-brand-600 dark:text-brand-400">Admin</span>
           </Link>
 
           <button
@@ -131,7 +157,6 @@ const AppHeader = () => {
                       fillRule="evenodd"
                       clipRule="evenodd"
                       d="M3.04175 9.37363C3.04175 5.87693 5.87711 3.04199 9.37508 3.04199C12.8731 3.04199 15.7084 5.87693 15.7084 9.37363C15.7084 12.8703 12.8731 15.7053 9.37508 15.7053C5.87711 15.7053 3.04175 12.8703 3.04175 9.37363ZM9.37508 1.54199C5.04902 1.54199 1.54175 5.04817 1.54175 9.37363C1.54175 13.6991 5.04902 17.2053 9.37508 17.2053C11.2674 17.2053 13.003 16.5344 14.357 15.4176L17.177 18.238C17.4699 18.5309 17.9448 18.5309 18.2377 18.238C18.5306 17.9451 18.5306 17.4703 18.2377 17.1774L15.418 14.3573C16.5365 13.0033 17.2084 11.2669 17.2084 9.37363C17.2084 5.04817 13.7011 1.54199 9.37508 1.54199Z"
-                      fill=""
                     />
                   </svg>
                 </span>
@@ -157,6 +182,84 @@ const AppHeader = () => {
         >
           <div className="flex items-center gap-2 2xsm:gap-3">
             <ThemeToggleButton />
+            <div className="relative" ref={colorPickerRef}>
+              <button
+                onClick={() => setColorPickerOpen((p) => !p)}
+                className="flex items-center justify-center w-10 h-10 text-gray-500 rounded-full border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                title="Accent Color"
+                aria-label="Change accent color"
+              >
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10c.83 0 1.5-.67 1.5-1.5 0-.39-.15-.74-.39-1.01-.23-.26-.38-.61-.38-.99 0-.83.67-1.5 1.5-1.5H16c2.76 0 5-2.24 5-5 0-4.42-4.03-8-9-8z"
+                    fill="currentColor"
+                    opacity="0.15"
+                  />
+                  <path
+                    d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10c.83 0 1.5-.67 1.5-1.5 0-.39-.15-.74-.39-1.01-.23-.26-.38-.61-.38-.99 0-.83.67-1.5 1.5-1.5H16c2.76 0 5-2.24 5-5 0-4.42-4.03-8-9-8z"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                  />
+                  <circle cx="6.5" cy="11.5" r="1.5" fill="currentColor" />
+                  <circle cx="9.5" cy="7.5" r="1.5" fill="currentColor" />
+                  <circle cx="14.5" cy="7.5" r="1.5" fill="currentColor" />
+                  <circle cx="17.5" cy="11.5" r="1.5" fill="currentColor" />
+                </svg>
+              </button>
+
+              {isColorPickerOpen && (
+                <div className="absolute left-0 sm:left-auto sm:right-0 mt-3 w-64 bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-xl p-4 z-[99999]">
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-3">
+                    Accent Color
+                  </p>
+                  <div className="grid grid-cols-6 gap-2.5">
+                    {ACCENT_COLORS.map((c) => (
+                      <button
+                        key={c.id}
+                        onClick={() => {
+                          setAccentColor(c.id);
+                          setColorPickerOpen(false);
+                        }}
+                        title={c.label}
+                        className="relative w-8 h-8 rounded-full transition-transform hover:scale-110 focus:outline-none"
+                        style={{
+                          backgroundColor: c.hex,
+                          boxShadow:
+                            accentColor === c.id
+                              ? `0 0 0 3px ${c.hex}50`
+                              : "none",
+                          border:
+                            accentColor === c.id
+                              ? `2px solid ${c.hex}`
+                              : "2px solid transparent",
+                        }}
+                      >
+                        {accentColor === c.id && (
+                          <span className="absolute inset-0 flex items-center justify-center">
+                            <svg
+                              width="13"
+                              height="13"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="white"
+                              strokeWidth="3.5"
+                            >
+                              <polyline points="20 6 9 17 4 12" />
+                            </svg>
+                          </span>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
             <NotificationDropdown />
           </div>
           <UserDropdown />
