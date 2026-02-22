@@ -5,7 +5,8 @@ export const Modal = ({
   onClose,
   children,
   className,
-  showCloseButton = true, // Default to true for backwards compatibility
+  title,
+  showCloseButton = true,
   isFullscreen = false,
 }) => {
   const modalRef = useRef(null);
@@ -78,7 +79,10 @@ export const Modal = ({
             </svg>
           </button>
         )}
-        <div>{children}</div>
+        <div className="p-6">
+          {title && <h2 className="text-xl font-bold text-slate-800 dark:text-white mb-4">{title}</h2>}
+          {children}
+        </div>
       </div>
     </div>
   );

@@ -1,15 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useLocation } from "react-router";
-import { ChevronDownIcon, GridIcon, HorizontaLDots } from "../../icons";
+import { ChevronDownIcon, HorizontaLDots } from "../../icons";
 import { useSidebar } from "../../context/SidebarContext";
-
-const navItems = [
-  {
-    icon: <GridIcon />,
-    name: "Dashboard",
-    path: "/",
-  },
-];
+import { useAuth } from "../../context/AuthContext";
+import { getRoleBasedNavigation } from "../../utils/navigation";
 
 const AppSidebar = () => {
   const {
@@ -19,7 +13,10 @@ const AppSidebar = () => {
     setIsHovered,
     toggleMobileSidebar,
   } = useSidebar();
+  const { user } = useAuth();
   const location = useLocation();
+  
+  const navItems = user ? getRoleBasedNavigation(user.role) : [];
 
   const [openSubmenu, setOpenSubmenu] = useState(null);
   const [subMenuHeight, setSubMenuHeight] = useState({});
