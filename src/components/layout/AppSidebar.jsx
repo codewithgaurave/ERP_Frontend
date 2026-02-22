@@ -1,13 +1,19 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useLocation } from "react-router";
-import { ChevronDownIcon, GridIcon, HorizontaLDots } from "../../icons";
+import {
+  ChevronDownIcon,
+  GridIcon,
+  GroupIcon,
+  BoxIconLine,
+  HorizontaLDots,
+} from "../../icons";
 import { useSidebar } from "../../context/SidebarContext";
 
 const navItems = [
   {
     icon: <GridIcon />,
     name: "Dashboard",
-    path: "/",
+    path: "/dashboard",
   },
 ];
 
