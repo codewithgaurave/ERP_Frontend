@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { useNavigate } from "react-router";
+import { useAuth } from "../context/AuthContext";
+import { authAPI } from "../services/api";
 import toast, { Toaster } from "react-hot-toast";
 import PageMeta from "../components/common/PageMeta";
 
@@ -8,20 +9,21 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const navigate = useNavigate();
+  const { login } = useAuth();
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
     setLoading(true);
 
-    // Simple timeout to simulate loading
-    setTimeout(() => {
+    try {
+      const { data } = await authAPI.login({ email, password });
+      login(data.user, data.token);
+      toast.success("Login successful! Welcome back.", { duration: 2000 });
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Login failed");
+    } finally {
       setLoading(false);
-      toast.success("Login successful! Welcome back.", {
-        duration: 2000,
-      });
-      setTimeout(() => navigate("/dashboard"), 800);
-    }, 1000);
+    }
   };
 
   return (
