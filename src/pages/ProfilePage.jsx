@@ -4,7 +4,7 @@ const ProfilePage = () => {
   const { user } = useAuth();
 
   return (
-    <div className="p-8">
+    <div className="">
       <h1 className="text-3xl font-bold text-slate-800 dark:text-white mb-6">My Profile</h1>
 
       <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-8 max-w-2xl">

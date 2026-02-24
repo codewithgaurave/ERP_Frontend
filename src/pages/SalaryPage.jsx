@@ -23,7 +23,7 @@ const SalaryPage = () => {
   if (loading) return <div className="p-8">Loading...</div>;
 
   return (
-    <div className="p-8">
+    <div className="">
       <h1 className="text-3xl font-bold text-slate-800 dark:text-white mb-6">My Salary Slips</h1>
 
       <div className="grid gap-6">

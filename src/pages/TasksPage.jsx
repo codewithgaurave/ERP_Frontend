@@ -176,7 +176,7 @@ const TasksPage = () => {
   };
 
   return (
-    <div className="p-4 md:p-6 lg:p-8">
+    <div className="">
       <div className="flex justify-between items-center mb-8 px-2">
         <div>
           <h1 className="text-xl md:text-2xl font-bold text-slate-800 dark:text-white mb-1">

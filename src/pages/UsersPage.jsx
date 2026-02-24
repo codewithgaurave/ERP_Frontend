@@ -295,7 +295,7 @@ const UsersPage = () => {
   };
 
   return (
-    <div className="p-4 md:p-6 lg:p-8">
+    <div className="">
       {/* Header */}
       <div className="flex justify-between items-center mb-8 px-2">
         <div>
@@ -440,41 +440,41 @@ const UsersPage = () => {
                         />
                       </td>
                       <td className="px-6 py-4 text-right">
-                        <div className="flex items-center justify-end gap-2 text-slate-300">
+                        <div className="flex items-center justify-end gap-1.5">
                           <button
                             onClick={() => handleEditClick(user)}
-                            className="p-1.5 hover:text-brand-600 hover:bg-brand-50 dark:hover:bg-brand-900/20 rounded-md transition-all"
-                            title="Edit"
+                            className="p-2 text-slate-500 hover:text-brand-600 hover:bg-brand-50 dark:text-gray-400 dark:hover:text-brand-400 dark:hover:bg-brand-500/10 rounded-lg transition-all border border-transparent hover:border-brand-100 dark:hover:border-brand-500/20 active:scale-90"
+                            title="Edit User"
                           >
                             <svg
                               className="w-4 h-4"
                               fill="none"
                               viewBox="0 0 24 24"
                               stroke="currentColor"
+                              strokeWidth="2.5"
                             >
                               <path
                                 strokeLinecap="round"
                                 strokeLinejoin="round"
-                                strokeWidth="2"
                                 d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
                               />
                             </svg>
                           </button>
                           <button
                             onClick={() => handleDelete(user._id)}
-                            className="p-1.5 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md transition-all"
-                            title="Delete"
+                            className="p-2 text-slate-500 hover:text-red-600 hover:bg-red-50 dark:text-gray-400 dark:hover:text-red-400 dark:hover:bg-red-500/10 rounded-lg transition-all border border-transparent hover:border-red-100 dark:hover:border-red-500/20 active:scale-90"
+                            title="Delete User"
                           >
                             <svg
                               className="w-4 h-4"
                               fill="none"
                               viewBox="0 0 24 24"
                               stroke="currentColor"
+                              strokeWidth="2.5"
                             >
                               <path
                                 strokeLinecap="round"
                                 strokeLinejoin="round"
-                                strokeWidth="2"
                                 d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
                               />
                             </svg>
@@ -499,9 +499,9 @@ const UsersPage = () => {
                 handlePageChange((pagination?.currentPage || 1) - 1)
               }
               disabled={(pagination?.currentPage || 1) === 1 || loading}
-              className="px-4 py-2 text-[10px] font-black bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700 rounded disabled:opacity-50 hover:bg-slate-50 transition-all uppercase tracking-tighter"
+              className="px-4 py-2 text-[10px] font-bold bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700 rounded-lg disabled:opacity-40 hover:bg-slate-50 dark:hover:bg-gray-700 hover:border-slate-300 dark:hover:border-gray-600 transition-all uppercase tracking-widest active:scale-95 shadow-sm dark:text-gray-300"
             >
-              Back
+              Previous
             </button>
             <button
               onClick={() =>
@@ -511,7 +511,7 @@ const UsersPage = () => {
                 (pagination?.currentPage || 1) ===
                   (pagination?.totalPages || 1) || loading
               }
-              className="px-4 py-2 text-[10px] font-black bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700 rounded disabled:opacity-50 hover:bg-slate-50 transition-all uppercase tracking-tighter"
+              className="px-4 py-2 text-[10px] font-bold bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700 rounded-lg disabled:opacity-40 hover:bg-slate-50 dark:hover:bg-gray-700 hover:border-slate-300 dark:hover:border-gray-600 transition-all uppercase tracking-widest active:scale-95 shadow-sm dark:text-gray-300"
             >
               Next
             </button>
