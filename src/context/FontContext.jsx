@@ -11,6 +11,7 @@ export const FONTS = [
   { id: "playfair", name: "Playfair Display", provider: "Google Fonts" },
   { id: "lexend", name: "Lexend", provider: "Google Fonts" },
   { id: "space-grotesk", name: "Space Grotesk", provider: "Google Fonts" },
+  { id: "road-rage", name: "Road Rage", provider: "Google Fonts" },
 ];
 
 export const FontProvider = ({ children }) => {
