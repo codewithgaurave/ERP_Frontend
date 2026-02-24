@@ -6,13 +6,16 @@ import "simplebar-react/dist/simplebar.min.css";
 import App from "./App";
 import { AppWrapper } from "./components/common/PageMeta";
 import { ThemeProvider } from "./context/ThemeContext";
+import { FontProvider } from "./context/FontContext";
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
     <ThemeProvider>
-      <AppWrapper>
-        <App />
-      </AppWrapper>
+      <FontProvider>
+        <AppWrapper>
+          <App />
+        </AppWrapper>
+      </FontProvider>
     </ThemeProvider>
   </StrictMode>,
 );

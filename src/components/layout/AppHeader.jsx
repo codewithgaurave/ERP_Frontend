@@ -5,12 +5,17 @@ import { ThemeToggleButton } from "../common/ThemeToggleButton";
 import { useTheme } from "../../context/ThemeContext";
 import NotificationDropdown from "./NotificationDropdown";
 import UserDropdown from "./UserDropdown";
+import { useFont } from "../../context/FontContext";
 
 const AppHeader = () => {
   const [isApplicationMenuOpen, setApplicationMenuOpen] = useState(false);
   const [isColorPickerOpen, setColorPickerOpen] = useState(false);
   const colorPickerRef = useRef(null);
   const { accentColor, setAccentColor, ACCENT_COLORS } = useTheme();
+  const { font: currentFont, setFont, FONTS } = useFont();
+
+  const [isFontPickerOpen, setFontPickerOpen] = useState(false);
+  const fontPickerRef = useRef(null);
 
   const {
     isExpanded,
@@ -42,6 +47,9 @@ const AppHeader = () => {
         !colorPickerRef.current.contains(e.target)
       ) {
         setColorPickerOpen(false);
+      }
+      if (fontPickerRef.current && !fontPickerRef.current.contains(e.target)) {
+        setFontPickerOpen(false);
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
@@ -253,6 +261,75 @@ const AppHeader = () => {
                               <polyline points="20 6 9 17 4 12" />
                             </svg>
                           </span>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+            {/* Font Picker */}
+            <div className="relative" ref={fontPickerRef}>
+              <button
+                onClick={() => setFontPickerOpen((p) => !p)}
+                className="flex items-center justify-center w-10 h-10 text-gray-500 rounded-full border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                title="Change Font"
+                aria-label="Change font"
+              >
+                <span className="text-lg font-bold">A</span>
+              </button>
+
+              {isFontPickerOpen && (
+                <div className="absolute left-0 sm:left-auto sm:right-0 mt-3 w-64 bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-xl p-4 z-[99999]">
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-3">
+                    Select Dashboard Font
+                  </p>
+                  <div className="flex flex-col gap-1">
+                    {FONTS.map((f) => (
+                      <button
+                        key={f.id}
+                        onClick={() => {
+                          setFont(f.id);
+                          setFontPickerOpen(false);
+                        }}
+                        className={`w-full text-left px-3 py-2.5 rounded transition-colors flex items-center justify-between group ${
+                          currentFont === f.id
+                            ? "bg-brand-50 dark:bg-brand-500/10 text-brand-600 dark:text-brand-400 font-bold"
+                            : "text-slate-600 dark:text-gray-400 hover:bg-slate-50 dark:hover:bg-gray-800"
+                        }`}
+                        style={{
+                          fontFamily:
+                            f.id === "outfit"
+                              ? "Outfit, sans-serif"
+                              : f.id === "inter"
+                                ? "Inter, sans-serif"
+                                : f.id === "roboto"
+                                  ? "Roboto, sans-serif"
+                                  : f.id === "poppins"
+                                    ? "Poppins, sans-serif"
+                                    : f.id === "baskerville"
+                                      ? "Libre Baskerville, serif"
+                                      : f.id === "playfair"
+                                        ? "Playfair Display, serif"
+                                        : f.id === "lexend"
+                                          ? "Lexend, sans-serif"
+                                          : "Space Grotesk, sans-serif",
+                        }}
+                      >
+                        <span className="text-sm">{f.name}</span>
+                        {currentFont === f.id && (
+                          <svg
+                            width="16"
+                            height="16"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="3"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          >
+                            <polyline points="20 6 9 17 4 12" />
+                          </svg>
                         )}
                       </button>
                     ))}
