@@ -27,7 +27,7 @@ export const authAPI = {
 // Users
 export const userAPI = {
   create: (data) => api.post("/users", data),
-  getAll: () => api.get("/users"),
+  getAll: (params) => api.get("/users", { params }),
   getById: (id) => api.get(`/users/${id}`),
   update: (id, data) => api.put(`/users/${id}`, data),
   toggleStatus: (id) => api.patch(`/users/${id}/toggle-status`),
