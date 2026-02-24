@@ -17,6 +17,8 @@ export const SidebarProvider = ({ children }) => {
   const [isHovered, setIsHovered] = useState(false);
   const [activeItem, setActiveItem] = useState(null);
   const [openSubmenu, setOpenSubmenu] = useState(null);
+  const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(false);
+  const [rightSidebarContent, setRightSidebarContent] = useState(null);
 
   useEffect(() => {
     const handleResize = () => {
@@ -47,6 +49,20 @@ export const SidebarProvider = ({ children }) => {
     setOpenSubmenu((prev) => (prev === item ? null : item));
   };
 
+  const openRightSidebar = (content) => {
+    setRightSidebarContent(content);
+    setIsRightSidebarOpen(true);
+    // Close left sidebar when right one opens
+    setIsExpanded(false);
+    setIsMobileOpen(false);
+  };
+
+  const closeRightSidebar = () => {
+    setIsRightSidebarOpen(false);
+    // When right sidebar closes, left sidebar should open
+    setIsExpanded(true);
+  };
+
   return (
     <SidebarContext.Provider
       value={{
@@ -55,11 +71,16 @@ export const SidebarProvider = ({ children }) => {
         isHovered,
         activeItem,
         openSubmenu,
+        isMobile,
+        isRightSidebarOpen,
+        rightSidebarContent,
         toggleSidebar,
         toggleMobileSidebar,
         setIsHovered,
         setActiveItem,
         toggleSubmenu,
+        openRightSidebar,
+        closeRightSidebar,
       }}
     >
       {children}

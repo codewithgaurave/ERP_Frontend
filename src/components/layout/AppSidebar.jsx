@@ -81,7 +81,7 @@ const AppSidebar = () => {
 
   return (
     <aside
-      className={`fixed mt-16 flex flex-col lg:mt-0 top-0 left-0 bg-[#F8FAFC] dark:bg-gray-900 text-slate-600 dark:text-gray-400 h-screen transition-all duration-300 ease-in-out z-50 border-r border-slate-200 dark:border-gray-800 shadow-sm
+      className={`fixed mt-20 flex flex-col lg:mt-0 top-0 left-0 bg-[#F8FAFC] dark:bg-gray-900 text-slate-600 dark:text-gray-400 h-screen transition-all duration-300 ease-in-out z-50 border-r border-slate-200 dark:border-gray-800 shadow-sm
         ${
           isExpanded || isMobileOpen
             ? "w-[290px]"
@@ -95,7 +95,7 @@ const AppSidebar = () => {
       onMouseLeave={() => setIsHovered(false)}
     >
       <div
-        className={`items-center h-[80px] border-b border-slate-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-sm ${
+        className={`items-center h-20 border-b border-slate-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-sm ${
           isMobileOpen
             ? "hidden"
             : !isExpanded && !isHovered
@@ -104,7 +104,7 @@ const AppSidebar = () => {
         }`}
       >
         <Link to="/" className="flex items-center gap-3 group">
-          <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-brand-600 to-indigo-700 flex items-center justify-center shadow-lg shadow-brand-500/30 group-hover:rotate-6 transition-all duration-300">
+          <div className="w-11 h-11 rounded bg-gradient-to-br from-brand-600 to-indigo-700 flex items-center justify-center shadow-lg shadow-brand-500/30 group-hover:rotate-6 transition-all duration-300">
             <svg
               width="26"
               height="26"
@@ -162,7 +162,7 @@ const AppSidebar = () => {
                       <div className="flex flex-col">
                         <button
                           onClick={() => handleSubmenuToggle(index, "main")}
-                          className={`flex items-center w-full gap-3 px-4 py-3.5 font-bold rounded-2xl transition-all duration-200 group text-sm ${
+                          className={`flex items-center w-full gap-3 px-4 py-3.5 font-bold rounded transition-all duration-200 group text-sm ${
                             openSubmenu?.index === index
                               ? "bg-white dark:bg-gray-800 text-brand-600 dark:text-brand-400 shadow-md border border-slate-100 dark:border-gray-700"
                               : "text-slate-500 dark:text-gray-400 hover:bg-white dark:hover:bg-gray-800 hover:shadow-sm hover:text-slate-900 dark:hover:text-white"
@@ -213,7 +213,7 @@ const AppSidebar = () => {
                       <Link
                         to={nav.path}
                         onClick={() => isMobileOpen && toggleMobileSidebar()}
-                        className={`flex items-center w-full gap-3 px-4 py-3.5 font-bold rounded-2xl transition-all duration-200 group text-sm ${
+                        className={`flex items-center w-full gap-3 px-4 py-3.5 font-bold rounded transition-all duration-200 group text-sm ${
                           isActive(nav.path)
                             ? "bg-brand-600 dark:bg-brand-500 text-white shadow-lg shadow-brand-600/30 border border-brand-500"
                             : "text-slate-500 dark:text-gray-400 hover:bg-white dark:hover:bg-gray-800 hover:shadow-sm hover:text-slate-900 dark:hover:text-white"
@@ -238,7 +238,7 @@ const AppSidebar = () => {
       </div>
 
       {(isExpanded || isHovered || isMobileOpen) && (
-        <div className="p-5 mx-2 mb-8 rounded-[24px] bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700 shadow-sm relative overflow-hidden group">
+        <div className="p-5 mx-2 mb-8 rounded bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700 shadow-sm relative overflow-hidden group">
           <div className="absolute -right-4 -top-4 w-16 h-16 bg-brand-50 dark:bg-gray-900 rounded-full group-hover:scale-150 transition-transform duration-500 opacity-50"></div>
           <p className="text-[10px] text-brand-600 dark:text-brand-400 font-black uppercase tracking-wider mb-1 relative">
             Support Desk
@@ -246,7 +246,7 @@ const AppSidebar = () => {
           <p className="text-[11px] text-slate-500 dark:text-gray-400 leading-tight font-bold relative">
             Experience any issues?
           </p>
-          <button className="mt-4 w-full py-3 bg-slate-900 dark:bg-gray-950 hover:bg-slate-800 dark:hover:bg-black text-white text-[11px] font-black rounded-xl transition-all active:scale-95 shadow-lg shadow-slate-200 dark:shadow-none">
+          <button className="mt-4 w-full py-3 bg-slate-900 dark:bg-gray-950 hover:bg-slate-800 dark:hover:bg-black text-white text-[11px] font-black rounded transition-all active:scale-95 shadow-lg shadow-slate-200 dark:shadow-none">
             CONTACT DEVELOPER
           </button>
         </div>

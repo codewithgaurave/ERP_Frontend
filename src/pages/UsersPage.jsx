@@ -3,13 +3,17 @@ import { userAPI } from "../services/api";
 import Button from "../components/ui/Button";
 import { useNavigate } from "react-router";
 import { useAuth } from "../context/AuthContext";
+import { useSidebar } from "../context/SidebarContext";
 import Toggle from "../components/ui/Toggle";
 import Select from "../components/ui/Select";
 import toast from "react-hot-toast";
+import { Drawer } from "../components/ui/Drawer";
 
 const UsersPage = () => {
   const navigate = useNavigate();
   const { user: currentUser } = useAuth();
+  const { openRightSidebar, closeRightSidebar, isRightSidebarOpen } =
+    useSidebar();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [pagination, setPagination] = useState({
@@ -25,55 +29,56 @@ const UsersPage = () => {
     status: "",
   });
 
-  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    password: "",
+    role: "EMPLOYEE",
+    salary: 0,
+    status: true,
+  });
+  const [formLoading, setFormLoading] = useState(false);
 
   const roleOptions = [
-    { label: "All Roles", value: "" },
-    { label: "HR", value: "HR" },
-    { label: "Manager", value: "MANAGER" },
-    { label: "Employee", value: "EMPLOYEE" },
-    { label: "Inventory", value: "INVENTORY" },
+    { value: "", label: "All Roles" },
+    { value: "EMPLOYEE", label: "Employee" },
+    { value: "MANAGER", label: "Manager" },
+    { value: "HR", label: "HR" },
+    { value: "INVENTORY", label: "Inventory" },
   ];
 
   const statusOptions = [
-    { label: "All Status", value: "" },
-    { label: "Active", value: "true" },
-    { label: "Inactive", value: "false" },
+    { value: "", label: "All Status" },
+    { value: "true", label: "Active" },
+    { value: "false", label: "Inactive" },
   ];
 
   useEffect(() => {
-    const handler = setTimeout(() => {
-      setDebouncedSearch(filters.search);
-    }, 500);
-    return () => clearTimeout(handler);
-  }, [filters.search]);
+    fetchUsers(1);
+  }, [filters]);
 
   useEffect(() => {
-    fetchUsers(1);
-  }, [debouncedSearch, filters.role, filters.status]);
+    if (isRightSidebarOpen) {
+      updateRightSidebar();
+    }
+  }, [formData, formLoading, selectedUser, isRightSidebarOpen]);
 
   const fetchUsers = async (page = 1) => {
     try {
       setLoading(true);
-      const params = {
+      const { data } = await userAPI.getAll({
         page,
-        limit: 10,
-        search: debouncedSearch,
-        role: filters.role,
-        status: filters.status,
-      };
-      const { data } = await userAPI.getAll(params);
-      setUsers(data.users || []);
-      if (data.pagination) {
-        setPagination(data.pagination);
-      } else {
-        setPagination({
-          totalUsers: data.users?.length || 0,
-          totalPages: 1,
-          currentPage: 1,
-          limit: 10,
-        });
-      }
+        limit: pagination.limit,
+        ...filters,
+      });
+      setUsers(data.users);
+      setPagination({
+        ...pagination,
+        totalUsers: data.totalUsers,
+        totalPages: data.totalPages,
+        currentPage: data.currentPage,
+      });
     } catch (error) {
       console.error("Error fetching users:", error);
       toast.error("Failed to load users");
@@ -83,52 +88,240 @@ const UsersPage = () => {
   };
 
   const handlePageChange = (newPage) => {
-    if (newPage >= 1 && newPage <= (pagination?.totalPages || 1)) {
-      fetchUsers(newPage);
-    }
-  };
-
-  const handleDelete = async (id) => {
-    if (window.confirm("Delete this user?")) {
-      try {
-        await userAPI.delete(id);
-        toast.success("User deleted successfully");
-        fetchUsers(pagination?.currentPage || 1);
-      } catch (error) {
-        toast.error(error.response?.data?.message || "Error deleting user");
-      }
-    }
+    fetchUsers(newPage);
   };
 
   const toggleStatus = async (id) => {
     try {
       await userAPI.toggleStatus(id);
       toast.success("Status updated");
+      fetchUsers(pagination.currentPage);
+    } catch (error) {
+      toast.error("Error updating status");
+    }
+  };
+
+  const handleDelete = async (id) => {
+    if (window.confirm("Are you sure you want to delete this user?")) {
+      try {
+        await userAPI.delete(id);
+        toast.success("Personnel record expunged");
+        fetchUsers(pagination.currentPage);
+      } catch (error) {
+        toast.error("Error deleting user");
+      }
+    }
+  };
+
+  const updateRightSidebar = () => {
+    openRightSidebar(
+      <Drawer
+        onClose={closeRightSidebar}
+        title={selectedUser ? "Update User" : "Create User"}
+        footer={
+          <div className="flex gap-3">
+            <Button
+              form="user-form"
+              type="submit"
+              className="flex-1 py-3.5 text-[10px] font-bold rounded uppercase tracking-[2px] shadow-lg shadow-brand-500/20 active:scale-[0.98]"
+              disabled={formLoading}
+            >
+              {formLoading
+                ? "Synchronizing..."
+                : selectedUser
+                  ? "Update User"
+                  : "Create User"}
+            </Button>
+            <button
+              type="button"
+              onClick={closeRightSidebar}
+              className="flex-1 py-3.5 text-[10px] font-bold text-slate-500 bg-slate-100 hover:bg-slate-200 dark:bg-gray-800 dark:hover:bg-gray-700 rounded uppercase tracking-widest transition-colors"
+            >
+              Cancel
+            </button>
+          </div>
+        }
+      >
+        <form id="user-form" onSubmit={handleFormSubmit} className="space-y-6">
+          <div className="space-y-2">
+            <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-[1.5px]">
+              Full Name
+            </label>
+            <input
+              type="text"
+              placeholder="e.g. Abhay"
+              value={formData.name}
+              onChange={(e) =>
+                setFormData({ ...formData, name: e.target.value })
+              }
+              className="w-full px-4 py-3 rounded border border-slate-200 dark:border-gray-700 dark:bg-gray-800 dark:text-white outline-none focus:ring-1 focus:ring-brand-500 transition-all font-semibold text-sm"
+              required
+            />
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-[1.5px]">
+              Email
+            </label>
+            <input
+              type="email"
+              placeholder="abhay@conctrum.com"
+              value={formData.email}
+              onChange={(e) =>
+                setFormData({ ...formData, email: e.target.value })
+              }
+              className="w-full px-4 py-3 rounded border border-slate-200 dark:border-gray-700 dark:bg-gray-800 dark:text-white outline-none focus:ring-1 focus:ring-brand-500 transition-all font-semibold text-sm"
+              required
+            />
+          </div>
+
+          {!selectedUser && (
+            <div className="space-y-2">
+              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-[1.5px]">
+                Password
+              </label>
+              <input
+                type="password"
+                placeholder="••••••••"
+                value={formData.password}
+                onChange={(e) =>
+                  setFormData({ ...formData, password: e.target.value })
+                }
+                className="w-full px-4 py-3 rounded border border-slate-200 dark:border-gray-700 dark:bg-gray-800 dark:text-white outline-none focus:ring-1 focus:ring-brand-500 transition-all font-semibold text-sm"
+                required
+              />
+            </div>
+          )}
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-[1.5px]">
+                Assigned Role
+              </label>
+              <Select
+                options={[
+                  { value: "EMPLOYEE", label: "Employee" },
+                  { value: "MANAGER", label: "Manager" },
+                  { value: "HR", label: "HR" },
+                  { value: "INVENTORY", label: "Inventory" },
+                ]}
+                value={formData.role}
+                onChange={(val) => setFormData({ ...formData, role: val })}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-[1.5px]">
+                Base Salary
+              </label>
+              <input
+                type="number"
+                placeholder="0"
+                value={formData.salary}
+                onChange={(e) =>
+                  setFormData({ ...formData, salary: e.target.value })
+                }
+                className="w-full px-4 py-3 rounded border border-slate-200 dark:border-gray-700 dark:bg-gray-800 dark:text-white outline-none font-semibold text-xs"
+                required
+              />
+            </div>
+          </div>
+
+          {selectedUser && (
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-[1.5px]">
+                Current Status
+              </label>
+              <Select
+                options={[
+                  { value: true, label: "Active" },
+                  { value: false, label: "Inactive" },
+                ]}
+                value={formData.status}
+                onChange={(val) => setFormData({ ...formData, status: val })}
+              />
+            </div>
+          )}
+        </form>
+      </Drawer>,
+    );
+  };
+
+  const handleAddClick = () => {
+    setSelectedUser(null);
+    setFormData({
+      name: "",
+      email: "",
+      password: "",
+      role: "EMPLOYEE",
+      salary: 0,
+      status: true,
+    });
+    // The useEffect will trigger updateRightSidebar when formData is set
+    openRightSidebar(null); // Just signal it's open, content will follow
+  };
+
+  const handleEditClick = (user) => {
+    setSelectedUser(user);
+    setFormData({
+      name: user.name,
+      email: user.email,
+      password: "",
+      role: user.role,
+      salary: user.salary,
+      status: user.status,
+    });
+    openRightSidebar(null);
+  };
+
+  const handleFormSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      setFormLoading(true);
+      if (selectedUser) {
+        await userAPI.update(selectedUser._id, formData);
+        toast.success("User updated successfully");
+      } else {
+        await userAPI.create(formData);
+        toast.success("User created successfully");
+      }
+      closeRightSidebar();
       fetchUsers(pagination?.currentPage || 1);
     } catch (error) {
-      toast.error(error.response?.data?.message || "Error updating status");
+      toast.error(error.response?.data?.message || "Error saving user");
+    } finally {
+      setFormLoading(false);
     }
   };
 
   return (
-    <div className="">
+    <div className="p-4 md:p-6 lg:p-8">
       {/* Header */}
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl md:text-3xl font-bold text-slate-800 dark:text-white">
-          Users Management
-        </h1>
-        <Button onClick={() => navigate("/users/add")} size="sm">
+      <div className="flex justify-between items-center mb-8 px-2">
+        <div>
+          <h1 className="text-xl md:text-2xl font-bold text-slate-800 dark:text-white mb-1">
+            Users Management
+          </h1>
+          <p className="text-[10px] text-slate-500 dark:text-gray-400 font-bold tracking-widest uppercase">
+            Manage your team and their access levels
+          </p>
+        </div>
+        <Button
+          onClick={handleAddClick}
+          size="sm"
+          className="rounded shadow-lg shadow-brand-500/20"
+        >
           + Add User
         </Button>
       </div>
 
       {/* Filters & Search */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6 px-2">
         <div className="relative">
           <input
             type="text"
-            placeholder="Search users..."
-            className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-gray-700 dark:bg-gray-800 dark:text-white outline-none focus:ring-2 focus:ring-blue-500/20 text-sm"
+            placeholder="Search by name or email..."
+            className="w-full px-4 py-2.5 rounded border border-slate-200 dark:border-gray-700 dark:bg-gray-800 dark:text-white outline-none focus:ring-2 focus:ring-brand-500/20 text-sm transition-all"
             value={filters.search}
             onChange={(e) => setFilters({ ...filters, search: e.target.value })}
           />
@@ -137,65 +330,65 @@ const UsersPage = () => {
           options={roleOptions}
           value={filters.role}
           onChange={(val) => setFilters({ ...filters, role: val })}
-          placeholder="All Roles"
+          placeholder="Filter by Role"
+          className="rounded shadow-sm"
         />
         <Select
           options={statusOptions}
           value={filters.status}
           onChange={(val) => setFilters({ ...filters, status: val })}
-          placeholder="All Status"
+          placeholder="Filter by Status"
+          className="rounded shadow-sm"
         />
       </div>
 
       {/* Table Container */}
-      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm overflow-hidden border border-slate-100 dark:border-gray-700">
+      <div className="bg-white dark:bg-gray-800 rounded shadow-sm overflow-hidden border border-slate-100 dark:border-gray-700 mx-2">
         <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-slate-50 dark:bg-gray-900">
+          <table className="w-full border-collapse">
+            <thead className="bg-slate-50 dark:bg-gray-900/50">
               <tr>
-                <th className="px-5 py-3 text-left text-xs font-bold text-slate-600 dark:text-gray-400 uppercase">
-                  Name
+                <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 dark:text-gray-400 uppercase tracking-wider">
+                  Employee
                 </th>
-                <th className="px-5 py-3 text-left text-xs font-bold text-slate-600 dark:text-gray-400 uppercase">
-                  Email
-                </th>
-                <th className="px-5 py-3 text-left text-xs font-bold text-slate-600 dark:text-gray-400 uppercase">
+                <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 dark:text-gray-400 uppercase tracking-wider">
                   Role
                 </th>
-                <th className="px-5 py-3 text-left text-xs font-bold text-slate-600 dark:text-gray-400 uppercase">
+                <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 dark:text-gray-400 uppercase tracking-wider">
                   Salary
                 </th>
-                <th className="px-5 py-3 text-left text-xs font-bold text-slate-600 dark:text-gray-400 uppercase">
+                <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 dark:text-gray-400 uppercase tracking-wider">
                   Status
                 </th>
-                <th className="px-5 py-3 text-left text-xs font-bold text-slate-600 dark:text-gray-400 uppercase">
+                <th className="px-6 py-4 text-right text-xs font-bold text-slate-500 dark:text-gray-400 uppercase tracking-wider">
                   Actions
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-gray-700">
+            <tbody className="divide-y divide-slate-100 dark:divide-gray-800">
               {loading ? (
                 <tr>
-                  <td
-                    colSpan="6"
-                    className="px-5 py-8 text-center text-slate-500 text-sm"
-                  >
-                    Loading users...
+                  <td colSpan="5" className="px-6 py-12 text-center">
+                    <div className="flex flex-col items-center gap-2">
+                      <div className="w-6 h-6 border-2 border-brand-500 border-t-transparent rounded-full animate-spin"></div>
+                      <span className="text-sm text-slate-500 font-medium">
+                        Syncing...
+                      </span>
+                    </div>
                   </td>
                 </tr>
               ) : users.length === 0 ? (
                 <tr>
                   <td
-                    colSpan="6"
-                    className="px-5 py-12 text-center text-slate-500 text-sm"
+                    colSpan="5"
+                    className="px-6 py-12 text-center text-slate-400 text-[10px] bg-slate-50/20 italic uppercase tracking-[4px] font-black"
                   >
-                    No users found
+                    No matching records
                   </td>
                 </tr>
               ) : (
                 users
                   .filter((user) => {
-                    // Hide ADMINs from the list if current user is an ADMIN
                     const isRequesterAdmin =
                       currentUser?.role?.toUpperCase() === "ADMIN";
                     if (
@@ -208,53 +401,85 @@ const UsersPage = () => {
                   .map((user) => (
                     <tr
                       key={user._id}
-                      className="hover:bg-slate-50 dark:hover:bg-gray-900 transition-colors"
+                      className="hover:bg-slate-50/50 dark:hover:bg-gray-900/50 transition-colors"
                     >
-                      <td className="px-5 py-3.5 text-sm font-semibold text-slate-800 dark:text-white">
-                        {user.name}
+                      <td className="px-6 py-4">
+                        <div className="flex flex-col">
+                          <span className="text-sm font-bold text-slate-800 dark:text-white">
+                            {user.name}
+                          </span>
+                          <span className="text-xs text-slate-400 font-medium">
+                            {user.email}
+                          </span>
+                        </div>
                       </td>
-                      <td className="px-5 py-3.5 text-sm text-slate-600 dark:text-gray-400">
-                        {user.email}
-                      </td>
-                      <td className="px-5 py-3.5">
+                      <td className="px-6 py-4">
                         <span
-                          className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase ${
+                          className={`px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider ${
                             user.role === "ADMIN"
                               ? "bg-purple-100 text-purple-700"
                               : user.role === "MANAGER"
                                 ? "bg-blue-100 text-blue-700"
                                 : user.role === "HR"
-                                  ? "bg-green-100 text-green-700"
+                                  ? "bg-emerald-100 text-emerald-700"
                                   : user.role === "INVENTORY"
                                     ? "bg-orange-100 text-orange-700"
-                                    : "bg-gray-100 text-gray-700"
+                                    : "bg-slate-100 text-slate-600"
                           }`}
                         >
                           {user.role}
                         </span>
                       </td>
-                      <td className="px-5 py-3.5 text-sm font-semibold text-slate-800 dark:text-white">
+                      <td className="px-6 py-4 text-sm font-bold text-slate-800 dark:text-white">
                         ₹{user.salary.toLocaleString()}
                       </td>
-                      <td className="px-5 py-3.5">
+                      <td className="px-6 py-4">
                         <Toggle
                           enabled={user.status}
                           onChange={() => toggleStatus(user._id)}
                         />
                       </td>
-                      <td className="px-5 py-3.5 flex items-center gap-3">
-                        <button
-                          onClick={() => navigate(`/users/edit/${user._id}`)}
-                          className="text-blue-600 hover:text-blue-800 font-semibold text-xs"
-                        >
-                          Edit
-                        </button>
-                        <button
-                          onClick={() => handleDelete(user._id)}
-                          className="text-red-600 hover:text-red-800 font-semibold text-xs"
-                        >
-                          Delete
-                        </button>
+                      <td className="px-6 py-4 text-right">
+                        <div className="flex items-center justify-end gap-2 text-slate-300">
+                          <button
+                            onClick={() => handleEditClick(user)}
+                            className="p-1.5 hover:text-brand-600 hover:bg-brand-50 dark:hover:bg-brand-900/20 rounded-md transition-all"
+                            title="Edit"
+                          >
+                            <svg
+                              className="w-4 h-4"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth="2"
+                                d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
+                              />
+                            </svg>
+                          </button>
+                          <button
+                            onClick={() => handleDelete(user._id)}
+                            className="p-1.5 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md transition-all"
+                            title="Delete"
+                          >
+                            <svg
+                              className="w-4 h-4"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth="2"
+                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                              />
+                            </svg>
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))
@@ -264,9 +489,9 @@ const UsersPage = () => {
         </div>
 
         {/* Pagination */}
-        <div className="px-5 py-3 bg-slate-50 dark:bg-gray-900 border-t border-slate-100 dark:border-gray-700 flex flex-col sm:flex-row items-center justify-between gap-3">
-          <span className="text-xs text-slate-500 dark:text-gray-400 font-medium">
-            Showing {users.length} of {pagination?.totalUsers || 0} users
+        <div className="px-6 py-3 bg-slate-50 dark:bg-gray-900/50 border-t border-slate-100 dark:border-gray-800 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <span className="text-[10px] text-slate-400 font-black uppercase tracking-widest">
+            {users.length} OF {pagination?.totalUsers || 0} RECORDS
           </span>
           <div className="flex gap-2">
             <button
@@ -274,9 +499,9 @@ const UsersPage = () => {
                 handlePageChange((pagination?.currentPage || 1) - 1)
               }
               disabled={(pagination?.currentPage || 1) === 1 || loading}
-              className="px-3 py-1.5 text-xs font-bold bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700 rounded-lg disabled:opacity-50"
+              className="px-4 py-2 text-[10px] font-black bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700 rounded disabled:opacity-50 hover:bg-slate-50 transition-all uppercase tracking-tighter"
             >
-              Previous
+              Back
             </button>
             <button
               onClick={() =>
@@ -286,7 +511,7 @@ const UsersPage = () => {
                 (pagination?.currentPage || 1) ===
                   (pagination?.totalPages || 1) || loading
               }
-              className="px-3 py-1.5 text-xs font-bold bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700 rounded-lg disabled:opacity-50"
+              className="px-4 py-2 text-[10px] font-black bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700 rounded disabled:opacity-50 hover:bg-slate-50 transition-all uppercase tracking-tighter"
             >
               Next
             </button>

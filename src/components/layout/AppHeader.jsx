@@ -21,6 +21,7 @@ const AppHeader = () => {
     isExpanded,
     isHovered,
     isMobileOpen,
+    isRightSidebarOpen,
     toggleSidebar,
     toggleMobileSidebar,
   } = useSidebar();
@@ -73,7 +74,7 @@ const AppHeader = () => {
 
   return (
     <header
-      className={`fixed top-0 right-0 z-[999] flex bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-800 transition-all duration-300 ease-in-out ${
+      className={`fixed top-0 right-0 z-[999] flex h-20 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-800 transition-all duration-300 ease-in-out ${
         isMobileOpen
           ? "left-0"
           : isExpanded || isHovered
