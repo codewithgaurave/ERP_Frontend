@@ -6,6 +6,7 @@ import Button from "../components/ui/Button";
 import { Drawer } from "../components/ui/Drawer";
 import Select from "../components/ui/Select";
 import toast from "react-hot-toast";
+import Swal from "sweetalert2";
 
 const TasksPage = () => {
   const { user } = useAuth();
@@ -15,6 +16,7 @@ const TasksPage = () => {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [formLoading, setFormLoading] = useState(false);
+  const [selectedTask, setSelectedTask] = useState(null);
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -31,13 +33,13 @@ const TasksPage = () => {
     if (isRightSidebarOpen) {
       updateRightSidebar();
     }
-  }, [formData, formLoading, users, isRightSidebarOpen]);
+  }, [formData, formLoading, users, isRightSidebarOpen, selectedTask]);
 
   const updateRightSidebar = () => {
     openRightSidebar(
       <Drawer
         onClose={closeRightSidebar}
-        title="+ New Objective"
+        title={selectedTask ? "Update Objective" : "+ New Objective"}
         footer={
           <div className="flex gap-3">
             <Button
@@ -46,7 +48,11 @@ const TasksPage = () => {
               className="flex-1 py-3.5 text-[10px] font-bold rounded uppercase tracking-[2px] shadow-lg shadow-brand-500/20 active:scale-[0.98]"
               disabled={formLoading}
             >
-              {formLoading ? "Deploying..." : "Initialize Objective"}
+              {formLoading
+                ? "Synchronizing..."
+                : selectedTask
+                  ? "Update Task"
+                  : "Create Task"}
             </Button>
             <button
               type="button"
@@ -147,27 +153,70 @@ const TasksPage = () => {
     }
   };
 
+  const handleEditClick = (task) => {
+    setSelectedTask(task);
+    setFormData({
+      title: task.title,
+      description: task.description,
+      assignedTo: task.assignedTo?._id || task.assignedTo || "",
+      deadline: task.deadline ? task.deadline.split("T")[0] : "",
+    });
+    openRightSidebar(null);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
       setFormLoading(true);
-      await taskAPI.create(formData);
+      if (selectedTask) {
+        await taskAPI.updateStatus(selectedTask._id, formData);
+        toast.success("Objective updated successfully");
+      } else {
+        await taskAPI.create(formData);
+        toast.success("Task assigned successfully");
+      }
       closeRightSidebar();
       setFormData({ title: "", description: "", assignedTo: "", deadline: "" });
-      toast.success("Task assigned successfully");
+      setSelectedTask(null);
       fetchTasks();
     } catch (error) {
-      toast.error(error.response?.data?.message || "Error creating task");
+      toast.error(error.response?.data?.message || "Error saving task");
     } finally {
       setFormLoading(false);
     }
   };
 
   const handleDelete = async (id) => {
-    if (window.confirm("Are you sure you want to delete this task?")) {
+    const result = await Swal.fire({
+      title: "Delete Task?",
+      text: "This objective will be permanently removed.",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#1e40af",
+      cancelButtonColor: "#ef4444",
+      confirmButtonText: "Yes, delete it!",
+      background: document.documentElement.className.includes("dark")
+        ? "#111827"
+        : "#fff",
+      color: document.documentElement.className.includes("dark")
+        ? "#fff"
+        : "#000",
+    });
+
+    if (result.isConfirmed) {
       try {
         await taskAPI.delete(id);
-        toast.success("Task removed");
+        Swal.fire({
+          title: "Removed!",
+          text: "Task has been deleted.",
+          icon: "success",
+          background: document.documentElement.className.includes("dark")
+            ? "#111827"
+            : "#fff",
+          color: document.documentElement.className.includes("dark")
+            ? "#fff"
+            : "#000",
+        });
         fetchTasks();
       } catch (error) {
         toast.error(error.response?.data?.message || "Error deleting task");
@@ -189,6 +238,7 @@ const TasksPage = () => {
         {(user.role === "ADMIN" || user.role === "MANAGER") && (
           <Button
             onClick={() => {
+              setSelectedTask(null);
               setFormData({
                 title: "",
                 description: "",
@@ -240,24 +290,45 @@ const TasksPage = () => {
                   {task.status}
                 </span>
                 {(user.role === "ADMIN" || user.role === "MANAGER") && (
-                  <button
-                    onClick={() => handleDelete(task._id)}
-                    className="text-slate-300 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100"
-                  >
-                    <svg
-                      className="w-4 h-4"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
+                  <div className="flex items-center gap-1">
+                    <button
+                      onClick={() => handleEditClick(task)}
+                      className="text-slate-300 hover:text-brand-500 transition-colors"
+                      title="Edit Task"
                     >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="2"
-                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                      />
-                    </svg>
-                  </button>
+                      <svg
+                        className="w-4 h-4"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        strokeWidth="2.5"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
+                        />
+                      </svg>
+                    </button>
+                    <button
+                      onClick={() => handleDelete(task._id)}
+                      className="text-slate-300 hover:text-red-500 transition-colors"
+                    >
+                      <svg
+                        className="w-4 h-4"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth="2"
+                          d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                        />
+                      </svg>
+                    </button>
+                  </div>
                 )}
               </div>
 

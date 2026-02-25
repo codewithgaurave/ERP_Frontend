@@ -16,6 +16,7 @@ const Dashboard = () => {
     tasks: 0,
     payrolls: 0,
     inventory: 0,
+    recentUsers: [],
   });
   const [loading, setLoading] = useState(true);
 
@@ -30,7 +31,7 @@ const Dashboard = () => {
 
       if (user.role === "ADMIN") {
         promises.push(
-          userAPI.getAll(),
+          userAPI.getAll({ limit: 5 }),
           taskAPI.getAll(),
           payrollAPI.getAll(),
           inventoryAPI.getAll(),
@@ -38,7 +39,7 @@ const Dashboard = () => {
       } else if (user.role === "MANAGER") {
         promises.push(taskAPI.getAll());
       } else if (user.role === "HR") {
-        promises.push(userAPI.getAll(), payrollAPI.getAll());
+        promises.push(userAPI.getAll({ limit: 5 }), payrollAPI.getAll());
       } else if (user.role === "EMPLOYEE") {
         promises.push(taskAPI.getMyTasks(), payrollAPI.getMyPayroll());
       } else if (user.role === "INVENTORY") {
@@ -49,25 +50,34 @@ const Dashboard = () => {
 
       if (user.role === "ADMIN") {
         setStats({
-          users: results[0]?.data?.users?.length || 0,
+          users: results[0]?.data?.pagination?.totalUsers || 0,
           tasks: results[1]?.data?.tasks?.length || 0,
           payrolls: results[2]?.data?.payrolls?.length || 0,
           inventory: results[3]?.data?.items?.length || 0,
+          recentUsers: results[0]?.data?.users || [],
         });
       } else if (user.role === "MANAGER") {
-        setStats({ tasks: results[0]?.data?.tasks?.length || 0 });
+        setStats({
+          tasks: results[0]?.data?.tasks?.length || 0,
+          recentUsers: [],
+        });
       } else if (user.role === "HR") {
         setStats({
-          users: results[0]?.data?.users?.length || 0,
+          users: results[0]?.data?.pagination?.totalUsers || 0,
           payrolls: results[1]?.data?.payrolls?.length || 0,
+          recentUsers: results[0]?.data?.users || [],
         });
       } else if (user.role === "EMPLOYEE") {
         setStats({
           tasks: results[0]?.data?.tasks?.length || 0,
           payrolls: results[1]?.data?.payrolls?.length || 0,
+          recentUsers: [],
         });
       } else if (user.role === "INVENTORY") {
-        setStats({ inventory: results[0]?.data?.items?.length || 0 });
+        setStats({
+          inventory: results[0]?.data?.items?.length || 0,
+          recentUsers: [],
+        });
       }
     } catch (error) {
       console.error("Error fetching stats:", error);
@@ -131,8 +141,8 @@ const Dashboard = () => {
                 color="blue"
               />
               <StatCard
-                title="Pending Tasks"
-                value={stats.tasks}
+                title="Objective Progress"
+                value={`${Math.min(100, stats.tasks * 10)}%`}
                 icon="⏳"
                 color="yellow"
               />
@@ -148,7 +158,7 @@ const Dashboard = () => {
                 color="purple"
               />
               <StatCard
-                title="Payroll Records"
+                title="Payroll Slips"
                 value={stats.payrolls}
                 icon="💰"
                 color="green"
@@ -165,7 +175,7 @@ const Dashboard = () => {
                 color="blue"
               />
               <StatCard
-                title="Salary Slips"
+                title="My Payrolls"
                 value={stats.payrolls}
                 icon="💰"
                 color="green"
@@ -175,7 +185,7 @@ const Dashboard = () => {
 
           {user.role === "INVENTORY" && (
             <StatCard
-              title="Inventory Items"
+              title="Inventory Stock"
               value={stats.inventory}
               icon="📦"
               color="orange"
@@ -183,10 +193,10 @@ const Dashboard = () => {
           )}
         </div>
 
-        {/* Visual Charts & Metrics (Grievance Project Style) */}
+        {/* Visual Charts & Metrics */}
         <div className="grid grid-cols-12 gap-4 md:gap-6">
           <div className="col-span-12 space-y-6 xl:col-span-7">
-            <EcommerceMetrics />
+            <EcommerceMetrics stats={stats} />
             <MonthlySalesChart />
           </div>
 
@@ -203,7 +213,7 @@ const Dashboard = () => {
           </div>
 
           <div className="col-span-12 xl:col-span-7">
-            <RecentOrders />
+            <RecentOrders users={stats.recentUsers} />
           </div>
         </div>
       </div>

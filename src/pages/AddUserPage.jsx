@@ -48,13 +48,19 @@ const AddUserPage = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    // console.log(formData);
     try {
       setLoading(true);
+      const submissionData = {
+        ...formData,
+        salary: Number(formData.salary),
+      };
+
       if (id) {
-        await userAPI.update(id, formData);
+        await userAPI.update(id, submissionData);
         toast.success("User updated successfully");
       } else {
-        await userAPI.create(formData);
+        await userAPI.create(submissionData);
         toast.success("User created successfully");
       }
       navigate("/users");

@@ -212,10 +212,14 @@ const InventoryPage = () => {
     e.preventDefault();
     try {
       setFormLoading(true);
-      await inventoryAPI.addItem(formData);
+      const submissionData = {
+        ...formData,
+        quantity: Number(formData.quantity),
+      };
+      await inventoryAPI.addItem(submissionData);
       closeRightSidebar();
       setFormData({ itemName: "", quantity: 0 });
-      toast.success("Item added to stock");
+      toast.success("Item added to stock successfully");
       fetchItems();
     } catch (error) {
       toast.error(error.response?.data?.message || "Error adding item");
@@ -228,12 +232,17 @@ const InventoryPage = () => {
     e.preventDefault();
     try {
       setFormLoading(true);
+      const submissionData = {
+        ...issueData,
+        quantity: Number(issueData.quantity),
+      };
+
       if (issueData.action === "ISSUE") {
-        await inventoryAPI.issue(issueData);
-        toast.success("Item issued successfully");
+        await inventoryAPI.issue(submissionData);
+        toast.success("Resource issued successfully");
       } else {
-        await inventoryAPI.return(issueData);
-        toast.success("Item returned successfully");
+        await inventoryAPI.return(submissionData);
+        toast.success("Resource returned to stock");
       }
       closeRightSidebar();
       setIssueData({ itemId: "", userId: "", quantity: 0, action: "ISSUE" });

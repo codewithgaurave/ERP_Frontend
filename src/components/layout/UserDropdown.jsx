@@ -3,6 +3,7 @@ import { DropdownItem } from "../ui/DropdownItem";
 import { Dropdown } from "../ui/Dropdown";
 import { Link } from "react-router";
 import { useAuth } from "../../context/AuthContext";
+import Swal from "sweetalert2";
 
 export default function UserDropdown() {
   const [isOpen, setIsOpen] = useState(false);
@@ -15,6 +16,42 @@ export default function UserDropdown() {
   function closeDropdown() {
     setIsOpen(false);
   }
+
+  const handleLogout = async () => {
+    closeDropdown();
+    const result = await Swal.fire({
+      title: "Logout?",
+      text: "Are you sure you want to sign out?",
+      icon: "question",
+      showCancelButton: true,
+      confirmButtonColor: "#1e40af",
+      cancelButtonColor: "#ef4444",
+      confirmButtonText: "Yes, Sign Out",
+      background: document.documentElement.className.includes("dark")
+        ? "#111827"
+        : "#fff",
+      color: document.documentElement.className.includes("dark")
+        ? "#fff"
+        : "#000",
+    });
+
+    if (result.isConfirmed) {
+      logout();
+      Swal.fire({
+        title: "Signed Out",
+        text: "You have been successfully logged out.",
+        icon: "success",
+        timer: 1500,
+        showConfirmButton: false,
+        background: document.documentElement.className.includes("dark")
+          ? "#111827"
+          : "#fff",
+        color: document.documentElement.className.includes("dark")
+          ? "#fff"
+          : "#000",
+      });
+    }
+  };
   return (
     <div className="relative">
       <button
@@ -155,10 +192,7 @@ export default function UserDropdown() {
           </li>
         </ul>
         <button
-          onClick={() => {
-            closeDropdown();
-            logout();
-          }}
+          onClick={handleLogout}
           className="flex items-center gap-3 px-3 py-2 mt-3 font-medium text-gray-700 rounded-lg group text-theme-sm hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-gray-300 w-full"
         >
           <svg

@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect } from "react";
 import { useNavigate } from "react-router";
+import { authAPI } from "../services/api";
 
 const AuthContext = createContext();
 
@@ -9,12 +10,24 @@ export const AuthProvider = ({ children }) => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    const userData = localStorage.getItem("user");
-    if (token && userData) {
-      setUser(JSON.parse(userData));
-    }
-    setLoading(false);
+    const initAuth = async () => {
+      const token = localStorage.getItem("token");
+      if (token) {
+        try {
+          const { data } = await authAPI.getMe();
+          setUser(data.user);
+          localStorage.setItem("user", JSON.stringify(data.user));
+        } catch (error) {
+          console.error("Auth initialization failed:", error);
+          localStorage.removeItem("token");
+          localStorage.removeItem("user");
+          setUser(null);
+        }
+      }
+      setLoading(false);
+    };
+
+    initAuth();
   }, []);
 
   const login = (userData, token) => {

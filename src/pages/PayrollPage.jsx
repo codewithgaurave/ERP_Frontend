@@ -55,8 +55,12 @@ const PayrollPage = () => {
     e.preventDefault();
     setFormLoading(true);
     try {
-      await payrollAPI.generate(formData);
-      toast.success("Payroll generated successfully");
+      const submissionData = {
+        ...formData,
+        bonus: Number(formData.bonus),
+      };
+      await payrollAPI.generate(submissionData);
+      toast.success("Financial statement generated successfully");
       closeRightSidebar();
       setFormData({ userId: "", month: "", bonus: 0 });
       fetchPayrolls();

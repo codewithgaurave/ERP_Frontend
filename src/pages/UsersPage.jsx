@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { userAPI } from "../services/api";
 import Button from "../components/ui/Button";
 import { useNavigate } from "react-router";
@@ -8,6 +8,7 @@ import Toggle from "../components/ui/Toggle";
 import Select from "../components/ui/Select";
 import toast from "react-hot-toast";
 import { Drawer } from "../components/ui/Drawer";
+import Swal from "sweetalert2";
 
 const UsersPage = () => {
   const navigate = useNavigate();
@@ -24,10 +25,11 @@ const UsersPage = () => {
   });
 
   const [filters, setFilters] = useState({
-    search: "",
     role: "",
     status: "",
   });
+  const [searchTerm, setSearchTerm] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
 
   const [selectedUser, setSelectedUser] = useState(null);
   const [formData, setFormData] = useState({
@@ -39,6 +41,7 @@ const UsersPage = () => {
     status: true,
   });
   const [formLoading, setFormLoading] = useState(false);
+  const [togglingId, setTogglingId] = useState(null);
 
   const roleOptions = [
     { value: "", label: "All Roles" },
@@ -54,9 +57,17 @@ const UsersPage = () => {
     { value: "false", label: "Inactive" },
   ];
 
+  // Debounce Search Logic
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchTerm);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
   useEffect(() => {
     fetchUsers(1);
-  }, [filters]);
+  }, [filters, debouncedSearch]);
 
   useEffect(() => {
     if (isRightSidebarOpen) {
@@ -64,20 +75,31 @@ const UsersPage = () => {
     }
   }, [formData, formLoading, selectedUser, isRightSidebarOpen]);
 
+  // OPTIMIZATION: Memoize filtered users to avoid recalculating on every render
+  const visibleUsers = useMemo(() => {
+    const isRequesterAdmin = currentUser?.role?.toUpperCase() === "ADMIN";
+    return users.filter((u) => {
+      // Hide other ADMINs if the current user is an ADMIN
+      if (isRequesterAdmin && u.role?.toUpperCase() === "ADMIN") return false;
+      return true;
+    });
+  }, [users, currentUser]);
+
   const fetchUsers = async (page = 1) => {
     try {
       setLoading(true);
       const { data } = await userAPI.getAll({
         page,
         limit: pagination.limit,
+        search: debouncedSearch,
         ...filters,
       });
       setUsers(data.users);
       setPagination({
         ...pagination,
-        totalUsers: data.totalUsers,
-        totalPages: data.totalPages,
-        currentPage: data.currentPage,
+        totalUsers: data.pagination.totalUsers,
+        totalPages: data.pagination.totalPages,
+        currentPage: data.pagination.currentPage,
       });
     } catch (error) {
       console.error("Error fetching users:", error);
@@ -93,19 +115,53 @@ const UsersPage = () => {
 
   const toggleStatus = async (id) => {
     try {
-      await userAPI.toggleStatus(id);
-      toast.success("Status updated");
-      fetchUsers(pagination.currentPage);
+      setTogglingId(id);
+      const { data } = await userAPI.toggleStatus(id);
+
+      // OPTIMIZATON: Update local state instead of re-fetching the entire list
+      setUsers((prevUsers) =>
+        prevUsers.map((u) => (u._id === id ? { ...u, status: !u.status } : u)),
+      );
+
+      toast.success(data.message || "Status updated");
     } catch (error) {
-      toast.error("Error updating status");
+      toast.error(error.response?.data?.message || "Error updating status");
+    } finally {
+      setTogglingId(null);
     }
   };
 
   const handleDelete = async (id) => {
-    if (window.confirm("Are you sure you want to delete this user?")) {
+    const result = await Swal.fire({
+      title: "Are you sure?",
+      text: "You won't be able to revert this!",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#1e40af", // brand-800
+      cancelButtonColor: "#ef4444", // red-500
+      confirmButtonText: "Yes, delete it!",
+      background: document.documentElement.className.includes("dark")
+        ? "#111827"
+        : "#fff",
+      color: document.documentElement.className.includes("dark")
+        ? "#fff"
+        : "#000",
+    });
+
+    if (result.isConfirmed) {
       try {
         await userAPI.delete(id);
-        toast.success("Personnel record expunged");
+        Swal.fire({
+          title: "Deleted!",
+          text: "Personnel record expunged.",
+          icon: "success",
+          background: document.documentElement.className.includes("dark")
+            ? "#111827"
+            : "#fff",
+          color: document.documentElement.className.includes("dark")
+            ? "#fff"
+            : "#000",
+        });
         fetchUsers(pagination.currentPage);
       } catch (error) {
         toast.error("Error deleting user");
@@ -278,17 +334,30 @@ const UsersPage = () => {
     e.preventDefault();
     try {
       setFormLoading(true);
+      const submissionData = {
+        name: formData.name,
+        email: formData.email,
+        role: formData.role,
+        salary: Number(formData.salary),
+        status: formData.status,
+      };
+
+      // Only include password if we are creating a new user
+      if (!selectedUser) {
+        submissionData.password = formData.password;
+      }
+
       if (selectedUser) {
-        await userAPI.update(selectedUser._id, formData);
-        toast.success("User updated successfully");
+        await userAPI.update(selectedUser._id, submissionData);
+        toast.success(`${submissionData.name}'s record updated`);
       } else {
-        await userAPI.create(formData);
-        toast.success("User created successfully");
+        await userAPI.create(submissionData);
+        toast.success(`${submissionData.name} added successfully`);
       }
       closeRightSidebar();
       fetchUsers(pagination?.currentPage || 1);
     } catch (error) {
-      toast.error(error.response?.data?.message || "Error saving user");
+      toast.error(error.response?.data?.message || "Operation failed");
     } finally {
       setFormLoading(false);
     }
@@ -322,8 +391,8 @@ const UsersPage = () => {
             type="text"
             placeholder="Search by name or email..."
             className="w-full px-4 py-2.5 rounded border border-slate-200 dark:border-gray-700 dark:bg-gray-800 dark:text-white outline-none focus:ring-2 focus:ring-brand-500/20 text-sm transition-all"
-            value={filters.search}
-            onChange={(e) => setFilters({ ...filters, search: e.target.value })}
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
         <Select
@@ -377,7 +446,7 @@ const UsersPage = () => {
                     </div>
                   </td>
                 </tr>
-              ) : users.length === 0 ? (
+              ) : visibleUsers.length === 0 ? (
                 <tr>
                   <td
                     colSpan="5"
@@ -387,102 +456,92 @@ const UsersPage = () => {
                   </td>
                 </tr>
               ) : (
-                users
-                  .filter((user) => {
-                    const isRequesterAdmin =
-                      currentUser?.role?.toUpperCase() === "ADMIN";
-                    if (
-                      isRequesterAdmin &&
-                      user.role?.toUpperCase() === "ADMIN"
-                    )
-                      return false;
-                    return true;
-                  })
-                  .map((user) => (
-                    <tr
-                      key={user._id}
-                      className="hover:bg-slate-50/50 dark:hover:bg-gray-900/50 transition-colors"
-                    >
-                      <td className="px-6 py-4">
-                        <div className="flex flex-col">
-                          <span className="text-sm font-bold text-slate-800 dark:text-white">
-                            {user.name}
-                          </span>
-                          <span className="text-xs text-slate-400 font-medium">
-                            {user.email}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span
-                          className={`px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider ${
-                            user.role === "ADMIN"
-                              ? "bg-purple-100 text-purple-700"
-                              : user.role === "MANAGER"
-                                ? "bg-blue-100 text-blue-700"
-                                : user.role === "HR"
-                                  ? "bg-emerald-100 text-emerald-700"
-                                  : user.role === "INVENTORY"
-                                    ? "bg-orange-100 text-orange-700"
-                                    : "bg-slate-100 text-slate-600"
-                          }`}
-                        >
-                          {user.role}
+                visibleUsers.map((user) => (
+                  <tr
+                    key={user._id}
+                    className="hover:bg-slate-50/50 dark:hover:bg-gray-900/50 transition-colors"
+                  >
+                    <td className="px-6 py-4">
+                      <div className="flex flex-col">
+                        <span className="text-sm font-bold text-slate-800 dark:text-white">
+                          {user.name}
                         </span>
-                      </td>
-                      <td className="px-6 py-4 text-sm font-bold text-slate-800 dark:text-white">
-                        ₹{user.salary.toLocaleString()}
-                      </td>
-                      <td className="px-6 py-4">
-                        <Toggle
-                          enabled={user.status}
-                          onChange={() => toggleStatus(user._id)}
-                        />
-                      </td>
-                      <td className="px-6 py-4 text-right">
-                        <div className="flex items-center justify-end gap-1.5">
-                          <button
-                            onClick={() => handleEditClick(user)}
-                            className="p-2 text-slate-500 hover:text-brand-600 hover:bg-brand-50 dark:text-gray-400 dark:hover:text-brand-400 dark:hover:bg-brand-500/10 rounded-lg transition-all border border-transparent hover:border-brand-100 dark:hover:border-brand-500/20 active:scale-90"
-                            title="Edit User"
+                        <span className="text-xs text-slate-400 font-medium">
+                          {user.email}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span
+                        className={`px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider ${
+                          user.role === "ADMIN"
+                            ? "bg-purple-100 text-purple-700"
+                            : user.role === "MANAGER"
+                              ? "bg-blue-100 text-blue-700"
+                              : user.role === "HR"
+                                ? "bg-emerald-100 text-emerald-700"
+                                : user.role === "INVENTORY"
+                                  ? "bg-orange-100 text-orange-700"
+                                  : "bg-slate-100 text-slate-600"
+                        }`}
+                      >
+                        {user.role}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-sm font-bold text-slate-800 dark:text-white">
+                      ₹{user.salary.toLocaleString()}
+                    </td>
+                    <td className="px-6 py-4">
+                      <Toggle
+                        enabled={user.status}
+                        onChange={() => toggleStatus(user._id)}
+                        loading={togglingId === user._id}
+                      />
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                      <div className="flex items-center justify-end gap-1.5">
+                        <button
+                          onClick={() => handleEditClick(user)}
+                          className="p-2 text-slate-500 hover:text-brand-600 hover:bg-brand-50 dark:text-gray-400 dark:hover:text-brand-400 dark:hover:bg-brand-500/10 rounded-lg transition-all border border-transparent hover:border-brand-100 dark:hover:border-brand-500/20 active:scale-90"
+                          title="Edit User"
+                        >
+                          <svg
+                            className="w-4 h-4"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                            strokeWidth="2.5"
                           >
-                            <svg
-                              className="w-4 h-4"
-                              fill="none"
-                              viewBox="0 0 24 24"
-                              stroke="currentColor"
-                              strokeWidth="2.5"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
-                              />
-                            </svg>
-                          </button>
-                          <button
-                            onClick={() => handleDelete(user._id)}
-                            className="p-2 text-slate-500 hover:text-red-600 hover:bg-red-50 dark:text-gray-400 dark:hover:text-red-400 dark:hover:bg-red-500/10 rounded-lg transition-all border border-transparent hover:border-red-100 dark:hover:border-red-500/20 active:scale-90"
-                            title="Delete User"
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
+                            />
+                          </svg>
+                        </button>
+                        <button
+                          onClick={() => handleDelete(user._id)}
+                          className="p-2 text-slate-500 hover:text-red-600 hover:bg-red-50 dark:text-gray-400 dark:hover:text-red-400 dark:hover:bg-red-500/10 rounded-lg transition-all border border-transparent hover:border-red-100 dark:hover:border-red-500/20 active:scale-90"
+                          title="Delete User"
+                        >
+                          <svg
+                            className="w-4 h-4"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                            strokeWidth="2.5"
                           >
-                            <svg
-                              className="w-4 h-4"
-                              fill="none"
-                              viewBox="0 0 24 24"
-                              stroke="currentColor"
-                              strokeWidth="2.5"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                              />
-                            </svg>
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                            />
+                          </svg>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
               )}
             </tbody>
           </table>

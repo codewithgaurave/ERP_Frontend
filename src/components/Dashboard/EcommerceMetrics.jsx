@@ -1,3 +1,11 @@
+// import {
+//   ArrowDownIcon,
+//   ArrowUpIcon,
+//   BoxIconLine,
+//   GroupIcon,
+// } from "../../icons";
+// import Badge from "../ui/Badge";
+
 import {
   ArrowDownIcon,
   ArrowUpIcon,
@@ -6,7 +14,7 @@ import {
 } from "../../icons";
 import Badge from "../ui/Badge";
 
-export default function EcommerceMetrics() {
+export default function EcommerceMetrics({ stats }) {
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:gap-6">
       {/* <!-- Metric Item Start --> */}
@@ -18,15 +26,15 @@ export default function EcommerceMetrics() {
         <div className="flex items-end justify-between mt-5">
           <div>
             <span className="text-sm text-gray-500 dark:text-gray-400">
-              Customers
+              Total Users
             </span>
             <h4 className="mt-2 font-bold text-gray-800 text-title-sm dark:text-white/90">
-              3,782
+              {stats?.users || 0}
             </h4>
           </div>
           <Badge color="success">
             <ArrowUpIcon />
-            11.01%
+            Active
           </Badge>
         </div>
       </div>
@@ -40,16 +48,16 @@ export default function EcommerceMetrics() {
         <div className="flex items-end justify-between mt-5">
           <div>
             <span className="text-sm text-gray-500 dark:text-gray-400">
-              Orders
+              Total Tasks
             </span>
             <h4 className="mt-2 font-bold text-gray-800 text-title-sm dark:text-white/90">
-              5,359
+              {stats?.tasks || 0}
             </h4>
           </div>
 
-          <Badge color="error">
+          <Badge color="warning">
             <ArrowDownIcon />
-            9.05%
+            Pending
           </Badge>
         </div>
       </div>
