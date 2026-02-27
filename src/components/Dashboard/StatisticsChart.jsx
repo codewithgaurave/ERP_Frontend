@@ -1,7 +1,31 @@
 import Chart from "react-apexcharts";
 import ChartTab from "../common/ChartTab";
 
-export default function StatisticsChart() {
+export default function StatisticsChart({ taskData = [] }) {
+  const months = [
+    "Jan",
+    "Feb",
+    "Mar",
+    "Apr",
+    "May",
+    "Jun",
+    "Jul",
+    "Aug",
+    "Sep",
+    "Oct",
+    "Nov",
+    "Dec",
+  ];
+  const chartData = new Array(12).fill(0);
+
+  taskData.forEach((item) => {
+    // _id is {month: 2, year: 2026}
+    const index = item._id.month - 1;
+    if (index >= 0 && index < 12) {
+      chartData[index] = item.count;
+    }
+  });
+
   const options = {
     legend: {
       show: false, // Hide legend
@@ -18,8 +42,8 @@ export default function StatisticsChart() {
       },
     },
     stroke: {
-      curve: "straight", // Define the line style (straight, smooth, or step)
-      width: [2, 2], // Line width for each dataset
+      curve: "smooth", // Define the line style (straight, smooth, or step)
+      width: [4, 4], // Line width for each dataset
     },
 
     fill: {
@@ -30,11 +54,11 @@ export default function StatisticsChart() {
       },
     },
     markers: {
-      size: 0, // Size of the marker points
+      size: 4, // Size of the marker points
       strokeColors: "#fff", // Marker border color
       strokeWidth: 2,
       hover: {
-        size: 6, // Marker size on hover
+        size: 7, // Marker size on hover
       },
     },
     grid: {
@@ -54,26 +78,10 @@ export default function StatisticsChart() {
     },
     tooltip: {
       enabled: true, // Enable tooltip
-      x: {
-        format: "dd MMM yyyy", // Format for x-axis tooltip
-      },
     },
     xaxis: {
       type: "category", // Category-based x-axis
-      categories: [
-        "Jan",
-        "Feb",
-        "Mar",
-        "Apr",
-        "May",
-        "Jun",
-        "Jul",
-        "Aug",
-        "Sep",
-        "Oct",
-        "Nov",
-        "Dec",
-      ],
+      categories: months,
       axisBorder: {
         show: false, // Hide x-axis border
       },
@@ -102,12 +110,11 @@ export default function StatisticsChart() {
 
   const series = [
     {
-      name: "Sales",
-      data: [180, 190, 170, 160, 175, 165, 170, 205, 230, 210, 240, 235],
-    },
-    {
-      name: "Revenue",
-      data: [40, 30, 50, 40, 55, 40, 70, 100, 110, 120, 150, 140],
+      name: "Tasks Created",
+      data:
+        taskData.length > 0
+          ? chartData
+          : [180, 190, 170, 160, 175, 165, 170, 205, 230, 210, 240, 235],
     },
   ];
   return (

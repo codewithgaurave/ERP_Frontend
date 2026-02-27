@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
-import { userAPI, taskAPI, payrollAPI, inventoryAPI } from "../services/api";
+import { dashboardAPI } from "../services/api";
 import PageMeta from "../components/common/PageMeta";
 import EcommerceMetrics from "../components/Dashboard/EcommerceMetrics";
 import MonthlySalesChart from "../components/Dashboard/MonthlySalesChart";
@@ -17,6 +17,9 @@ const Dashboard = () => {
     payrolls: 0,
     inventory: 0,
     recentUsers: [],
+    taskChart: [],
+    payrollChart: [],
+    taskDistribution: [],
   });
   const [loading, setLoading] = useState(true);
 
@@ -27,56 +30,18 @@ const Dashboard = () => {
   const fetchStats = async () => {
     if (!user) return;
     try {
-      const promises = [];
-
-      if (user.role === "ADMIN") {
-        promises.push(
-          userAPI.getAll({ limit: 5 }),
-          taskAPI.getAll(),
-          payrollAPI.getAll(),
-          inventoryAPI.getAll(),
-        );
-      } else if (user.role === "MANAGER") {
-        promises.push(taskAPI.getAll());
-      } else if (user.role === "HR") {
-        promises.push(userAPI.getAll({ limit: 5 }), payrollAPI.getAll());
-      } else if (user.role === "EMPLOYEE") {
-        promises.push(taskAPI.getMyTasks(), payrollAPI.getMyPayroll());
-      } else if (user.role === "INVENTORY") {
-        promises.push(inventoryAPI.getAll());
-      }
-
-      const results = await Promise.all(promises);
-
-      if (user.role === "ADMIN") {
+      const { data } = await dashboardAPI.getStats();
+      if (data.success) {
+        const s = data.data;
         setStats({
-          users: results[0]?.data?.pagination?.totalUsers || 0,
-          tasks: results[1]?.data?.tasks?.length || 0,
-          payrolls: results[2]?.data?.payrolls?.length || 0,
-          inventory: results[3]?.data?.items?.length || 0,
-          recentUsers: results[0]?.data?.users || [],
-        });
-      } else if (user.role === "MANAGER") {
-        setStats({
-          tasks: results[0]?.data?.tasks?.length || 0,
-          recentUsers: [],
-        });
-      } else if (user.role === "HR") {
-        setStats({
-          users: results[0]?.data?.pagination?.totalUsers || 0,
-          payrolls: results[1]?.data?.payrolls?.length || 0,
-          recentUsers: results[0]?.data?.users || [],
-        });
-      } else if (user.role === "EMPLOYEE") {
-        setStats({
-          tasks: results[0]?.data?.tasks?.length || 0,
-          payrolls: results[1]?.data?.payrolls?.length || 0,
-          recentUsers: [],
-        });
-      } else if (user.role === "INVENTORY") {
-        setStats({
-          inventory: results[0]?.data?.items?.length || 0,
-          recentUsers: [],
+          users: s.counts.totalUsers || 0,
+          tasks: s.counts.totalTasks || 0,
+          payrolls: s.counts.totalPayrolls || 0,
+          inventory: s.counts.totalInventoryItems || 0,
+          recentUsers: s.recentActivity || [],
+          taskChart: s.monthlyTaskChart || [],
+          payrollChart: s.monthlyPayrollChart || [],
+          taskDistribution: s.taskDistribution || [],
         });
       }
     } catch (error) {
@@ -143,7 +108,7 @@ const Dashboard = () => {
               <StatCard
                 title="Objective Progress"
                 value={`${Math.min(100, stats.tasks * 10)}%`}
-                // icon="⏳" 
+                // icon="⏳"
                 color="yellow"
               />
             </>
@@ -197,15 +162,15 @@ const Dashboard = () => {
         <div className="grid grid-cols-12 gap-4 md:gap-6">
           <div className="col-span-12 space-y-6 xl:col-span-7">
             <EcommerceMetrics stats={stats} />
-            <MonthlySalesChart />
+            <MonthlySalesChart payrollData={stats.payrollChart} />
           </div>
 
           <div className="col-span-12 xl:col-span-5">
-            <MonthlyTarget />
+            <MonthlyTarget taskDistribution={stats.taskDistribution} />
           </div>
 
           <div className="col-span-12">
-            <StatisticsChart />
+            <StatisticsChart taskData={stats.taskChart} />
           </div>
 
           <div className="col-span-12 xl:col-span-5">

@@ -4,7 +4,33 @@ import { DropdownItem } from "../ui/DropdownItem";
 import { MoreDotIcon } from "../../icons";
 import { useState } from "react";
 
-export default function MonthlySalesChart() {
+export default function MonthlySalesChart({ payrollData = [] }) {
+  // Map payroll data to months
+  const months = [
+    "Jan",
+    "Feb",
+    "Mar",
+    "Apr",
+    "May",
+    "Jun",
+    "Jul",
+    "Aug",
+    "Sep",
+    "Oct",
+    "Nov",
+    "Dec",
+  ];
+  const chartData = new Array(12).fill(0);
+
+  payrollData.forEach((item) => {
+    // Expecting month format: "January 2026" or similar, or we can handle different formats
+    const monthName = item._id.split(" ")[0];
+    const index = months.findIndex((m) => monthName.startsWith(m));
+    if (index !== -1) {
+      chartData[index] = item.totalSalary;
+    }
+  });
+
   const options = {
     colors: ["#465fff"],
     chart: {
@@ -32,20 +58,7 @@ export default function MonthlySalesChart() {
       colors: ["transparent"],
     },
     xaxis: {
-      categories: [
-        "Jan",
-        "Feb",
-        "Mar",
-        "Apr",
-        "May",
-        "Jun",
-        "Jul",
-        "Aug",
-        "Sep",
-        "Oct",
-        "Nov",
-        "Dec",
-      ],
+      categories: months,
       axisBorder: {
         show: false,
       },
@@ -80,14 +93,17 @@ export default function MonthlySalesChart() {
         show: false,
       },
       y: {
-        formatter: (val) => `${val}`,
+        formatter: (val) => `₹${val.toLocaleString()}`,
       },
     },
   };
   const series = [
     {
-      name: "Sales",
-      data: [168, 385, 201, 298, 187, 195, 291, 110, 215, 390, 280, 112],
+      name: "Payroll Payout",
+      data:
+        payrollData.length > 0
+          ? chartData
+          : [168, 385, 201, 298, 187, 195, 291, 110, 215, 390, 280, 112],
     },
   ];
   const [isOpen, setIsOpen] = useState(false);

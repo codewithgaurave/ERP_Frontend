@@ -62,4 +62,9 @@ export const inventoryAPI = {
   getMyLogs: () => api.get("/inventory/my-logs"),
 };
 
+// Dashboard
+export const dashboardAPI = {
+  getStats: () => api.get("/dashboard/stats"),
+};
+
 export default api;
