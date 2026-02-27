@@ -9,6 +9,7 @@ import {
 } from "../../icons";
 import { useSidebar } from "../../context/SidebarContext";
 import { useAuth } from "../../context/AuthContext";
+import Swal from "sweetalert2";
 import { getRoleBasedNavigation } from "../../utils/navigation";
 
 const AppSidebar = () => {
@@ -19,7 +20,7 @@ const AppSidebar = () => {
     setIsHovered,
     toggleMobileSidebar,
   } = useSidebar();
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const location = useLocation();
 
   const navItems = user ? getRoleBasedNavigation(user.role) : [];
@@ -77,6 +78,41 @@ const AppSidebar = () => {
       }
       return { type: menuType, index };
     });
+  };
+
+  const handleLogout = async () => {
+    const result = await Swal.fire({
+      title: "Logout?",
+      text: "Are you sure you want to sign out?",
+      icon: "question",
+      showCancelButton: true,
+      confirmButtonColor: "#1e40af",
+      cancelButtonColor: "#ef4444",
+      confirmButtonText: "Yes, Sign Out",
+      background: document.documentElement.className.includes("dark")
+        ? "#111827"
+        : "#fff",
+      color: document.documentElement.className.includes("dark")
+        ? "#fff"
+        : "#000",
+    });
+
+    if (result.isConfirmed) {
+      logout();
+      Swal.fire({
+        title: "Signed Out",
+        text: "You have been successfully logged out.",
+        icon: "success",
+        timer: 1500,
+        showConfirmButton: false,
+        background: document.documentElement.className.includes("dark")
+          ? "#111827"
+          : "#fff",
+        color: document.documentElement.className.includes("dark")
+          ? "#fff"
+          : "#000",
+      });
+    }
   };
 
   return (
@@ -237,20 +273,63 @@ const AppSidebar = () => {
         </nav>
       </div>
 
-      {(isExpanded || isHovered || isMobileOpen) && (
-        <div className="p-5 mx-2 mb-8 rounded bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700 shadow-sm relative overflow-hidden group">
-          <div className="absolute -right-4 -top-4 w-16 h-16 bg-brand-50 dark:bg-gray-900 rounded-full group-hover:scale-150 transition-transform duration-500 opacity-50"></div>
-          <p className="text-[10px] text-brand-600 dark:text-brand-400 font-black uppercase tracking-wider mb-1 relative">
-            Support Desk
-          </p>
-          <p className="text-[11px] text-slate-500 dark:text-gray-400 leading-tight font-bold relative">
-            Experience any issues?
-          </p>
-          <button className="mt-4 w-full py-3 bg-slate-900 dark:bg-gray-950 hover:bg-slate-800 dark:hover:bg-black text-white text-[11px] font-black rounded transition-all active:scale-95 shadow-lg shadow-slate-200 dark:shadow-none">
-            CONTACT DEVELOPER
-          </button>
-        </div>
-      )}
+      <div
+        className={`mt-auto px-4 pb-3 ${
+          !isExpanded && !isHovered && !isMobileOpen
+            ? "flex justify-center"
+            : ""
+        }`}
+      >
+        <button
+          onClick={handleLogout}
+          className={`group relative flex items-center transition-all duration-300 ease-in-out
+            ${
+              !isExpanded && !isHovered && !isMobileOpen
+                ? "w-8 h-8 justify-center rounded bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 hover:border-red-200 dark:hover:border-red-900/40 shadow-sm"
+                : "w-full gap-4 px-4 py-3.5 rounded bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700 text-slate-600 dark:text-gray-400 hover:bg-red-50 dark:hover:bg-red-900/10 hover:border-red-100 dark:hover:border-red-900/30 hover:text-red-600 dark:hover:text-red-400 shadow-sm hover:shadow-md"
+            }`}
+        >
+          <div
+            className={`flex items-center justify-center shrink-0 transition-transform duration-300 group-hover:scale-110
+            ${
+              !isExpanded && !isHovered && !isMobileOpen
+                ? ""
+                : "w-10 h-10 rounded-xl bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 group-hover:bg-red-100 dark:group-hover:bg-red-900/40"
+            }`}
+          >
+            <svg
+              width="22"
+              height="22"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"></path>
+              <polyline points="16 17 21 12 16 7"></polyline>
+              <line x1="21" y1="12" x2="9" y2="12"></line>
+            </svg>
+          </div>
+
+          {(isExpanded || isHovered || isMobileOpen) && (
+            <div className="flex flex-col items-start overflow-hidden">
+              <span className="text-sm font-bold tracking-tight">Logout</span>
+              <span className="text-[10px] font-medium text-slate-400 dark:text-gray-500 uppercase tracking-wider group-hover:text-red-400/80 transition-colors">
+                End Session
+              </span>
+            </div>
+          )}
+
+          {/* Hover Glow Effect */}
+          {(isExpanded || isHovered || isMobileOpen) && (
+            <div className="absolute right-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+              <div className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></div>
+            </div>
+          )}
+        </button>
+      </div>
     </aside>
   );
 };

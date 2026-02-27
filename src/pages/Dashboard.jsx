@@ -108,25 +108,25 @@ const Dashboard = () => {
               <StatCard
                 title="Total Users"
                 value={stats.users}
-                icon="👥"
+                // icon="👥"
                 color="purple"
               />
               <StatCard
                 title="Total Tasks"
                 value={stats.tasks}
-                icon="📋"
+                // icon="📋"
                 color="blue"
               />
               <StatCard
                 title="Payroll Records"
                 value={stats.payrolls}
-                icon="💰"
+                // icon="💰"
                 color="green"
               />
               <StatCard
                 title="Inventory Items"
                 value={stats.inventory}
-                icon="📦"
+                // icon="📦"
                 color="orange"
               />
             </>
@@ -137,13 +137,13 @@ const Dashboard = () => {
               <StatCard
                 title="Total Tasks"
                 value={stats.tasks}
-                icon="📋"
+                // icon="📋"
                 color="blue"
               />
               <StatCard
                 title="Objective Progress"
                 value={`${Math.min(100, stats.tasks * 10)}%`}
-                icon="⏳"
+                // icon="⏳" 
                 color="yellow"
               />
             </>
@@ -154,13 +154,13 @@ const Dashboard = () => {
               <StatCard
                 title="Total Employees"
                 value={stats.users}
-                icon="👥"
+                // icon="👥"
                 color="purple"
               />
               <StatCard
                 title="Payroll Slips"
                 value={stats.payrolls}
-                icon="💰"
+                // icon="💰"
                 color="green"
               />
             </>
@@ -171,13 +171,13 @@ const Dashboard = () => {
               <StatCard
                 title="My Tasks"
                 value={stats.tasks}
-                icon="📋"
+                // icon="📋"
                 color="blue"
               />
               <StatCard
                 title="My Payrolls"
                 value={stats.payrolls}
-                icon="💰"
+                // icon="💰"
                 color="green"
               />
             </>
@@ -187,7 +187,7 @@ const Dashboard = () => {
             <StatCard
               title="Inventory Stock"
               value={stats.inventory}
-              icon="📦"
+              // icon="📦"
               color="orange"
             />
           )}
@@ -231,7 +231,7 @@ const StatCard = ({ title, value, icon, color }) => {
   };
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-6 border border-slate-200 dark:border-gray-700">
+    <div className="bg-white dark:bg-gray-800 rounded shadow-sm p-6 border border-slate-200 dark:border-gray-700">
       <div className="flex items-center justify-between">
         <div>
           <p className="text-sm text-slate-600 dark:text-gray-400 mb-1">
@@ -241,11 +241,11 @@ const StatCard = ({ title, value, icon, color }) => {
             {value}
           </h3>
         </div>
-        <div
+        {/* <div
           className={`w-12 h-12 md:w-14 md:h-14 rounded-2xl bg-gradient-to-br ${colorClasses[color]} flex items-center justify-center text-xl md:text-2xl shadow-lg`}
         >
           {icon}
-        </div>
+        </div> */}
       </div>
     </div>
   );
